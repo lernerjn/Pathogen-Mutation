@@ -1,50 +1,57 @@
-function [tout, numberOfInfected, PopWhoToInfect, VH, time] = Pathogen(N, tauR, tauI, K, hthr, virusSize, mu ,p, infectProb, tend) 
+function [tout, numberOfInfected, PopWhoToInfect, time] = Pathogen(N, tauR, tauI, K, hthr, virusSize, mu ,p, infectProb, tend) 
 % Author: Jeremy Lerner, University of Arizona 
 %
 % This program models the spread of a pathogen that mutates around a population: 
 %
-% Outputs: [tout, numberOfInfected, PopWhoToInfect]
+% Outputs: [tout, numberOfInfected, PopWhoToInfect, time]
+%       tout: simply an array with 1:1:tend, to plot against the number of
+%       infected
+%
+%       numberOfInfected: the number of people infected at each time step,
+%       so numberOfInfected(t) is the number of sick people at time t
+%
+%       PopWhoToInfect: a representation of the small world network, that
+%       is PopWhoToInfect(i,:), for a person with no random connections
+%       would be [i - K , i - K + 1, ... , i + 1 , ..., i + K], and with
+%       increasing p, there is an inreasing chance of some of the entries
+%       will be a random connection
+%
+%       time: the number of seconds the program took to run
+%       
 % Inputs: Pathogen(N, tauR, tauI, K, hthr, virusSize mu ,p, infectProb, tend)
 %                  1    2     3   4    5        6    7   8     9         10
 % 
-%  N is size of the population
+%       N:  size of the population
 %
-% tauR is the time you are immune to a virus that you have had (so if you
-% get a virus at time 0, then at time tauR you are no longer immune to that
-% virus or viruses similar to that one)
+%       tauR: immunity duration (for example, if you  get a virus at 
+%       time 0, then at time tauR you are no longer immune to that
+%       virus or viruses similar to that one)
 %
-%  tauI is one less than the amount of time you stay infected
+%       tauI: infection duration
 %
-%  2 * K is the number of connections per person
+%       K: K is defined such that 2 * K is the number of connections per person
 %
-%  hthr is the hamming distance threshold, so if the virus is different than
-% the viruses in a person's history by more than the hamming distance, then
-% the person does get infected
-% Example: if the virus is [0 0 0 0] and a person has had virus [0 1 1 1],
-% then the hamming distance is 3, because 3 bits are different.
+%       hthr is the hamming distance threshold, so if a virus is different than
+%       the viruses in a person's history by more than the hamming distance, then
+%       the person is not immune
+%       Example: if the virus is [0 0 0 0] and a person has had virus [0 1 1 1],
+%       then the hamming distance is 3, because 3 bits are different.
 %
-% virusSize is the number of bits in the virus bit string
+%       virusSize: the number of bits in the virus bit string
 %
-% mu is the probability that the virus mutates at each transmission
+%       mu: the probability that the virus mutates at each transmission
 %
-% p is the probability of a random connection in the network (for each
-% person, it is at most one random connection and that replaces the 2 * K
-% connection.
+%       p: the probability of a random connection in the network, each
+%       connection has a p chance of being replaced with a random
+%       connection
 %
-% infectProb is the probabilty that the virus infects a person if they come
-% in contact with a person who is infected
+%       infectProb: the probabilty that the virus infects a person if they come
+%       in contact with an infected person
 %
-% tend is the number of time steps the model will run for.
+%       tend: the number of time steps the model will run for.
 %
-% tout is a column vector with all the times, basically for graphing
-% purposes
-%
-% numberOfInfected is the number of people who are infected with any virus
-% at each time step
-%
-% PopWhoToInfect is the network of connections, each person in the network
-% has their own row and they can infect any of the people on that row
-
+% An interesting case, these conditions cause a damped oscillation
+% [toutg, numberOfInfectedg, PopWhoToInfect]= Pathogen(1e5, 150, 0, 2, 2, 10, 0.01 ,0.01, 1, 2000);
 tic;
 
 VH = struct([]); %setting up the virus history structure array
